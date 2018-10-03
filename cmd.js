@@ -1,31 +1,40 @@
 #!/usr/bin/env node
 
+const path = require('path')
+const uniq = require('lodash/uniq')
 const Transformer = require('./')
-const transformations = require('./transformations')
+const TRANSFORMATIONS = require('./transformations')
+const { delimiter } = require('./constants')
+const log = (...args) => console.log(...args)
 const {
   help,
   list,
-  transformation,
+  transformations,
+  all,
   dir,
 } = require('minimist')(process.argv.slice(2), {
   alias: {
     h: 'help',
     l: 'list',
-    t: 'transformation',
+    t: 'transformations',
+    a: 'all',
     d: 'dir',
   },
   boolean: ['list'],
 })
 
-const printUsage = () => console.log(`
+const printUsage = () => log(`
   Usage:
     transform-models -h
 
   List transformations:
     transform-models -l
 
-  Apply transformation:
-    transform-models -t "[transformation-name]" -d /path/to/models/
+  Apply transformations:
+    transform-models -d /path/to/models/ -t "[transformation-name],[transformation-name],..."
+
+  Apply all transformations:
+    transform-models -d /path/to/models/ -a
 `)
 
 if (help) {
@@ -34,34 +43,48 @@ if (help) {
 }
 
 if (list) {
-  const names = Object.keys(transformations)
-  console.log(`Transformations:
+  const names = Object.keys(TRANSFORMATIONS)
+  log(`Transformations:
 
 ${names.join('\n')}`)
   process.exit(0)
 }
 
 ;(async () => {
-  if (!(dir && transformation)) {
-    throw new Error('expected strings "dir" and "transformation"')
+  if (!dir) {
+    throw new Error('expected string "dir"')
   }
 
-  const transform = transformations[transformation]
-  if (!transform) {
-    throw new Error(`transformation "${transformation}" not found`)
+  let names
+  if (all) {
+    names = Object.keys(TRANSFORMATIONS)
+  } else {
+    names = transformations.split(delimiter)
+    names.every(name => {
+      if (!TRANSFORMATIONS[name]) {
+        throw new Error(`transformation "${name}" not found`)
+      }
+    })
   }
 
-  const changed = await Transformer.transform({ dir, transform })
+  let changed = []
+  for (const name of names) {
+    const transform = TRANSFORMATIONS[name]
+    log(`applying transformation: ${name}`)
+    changed = changed.concat(await Transformer.transform({ dir, transform }))
+  }
+
+  changed = uniq(changed).map(filePath => path.relative(dir, filePath))
   if (!changed.length) {
-    console.log('no changes were necessary')
+    log('no changes were necessary')
     return
   }
 
-  console.log(`changed:
+  log(`changed:
 
 ${changed.join('\n')}`)
 })().catch(err => {
-  console.error(err.message)
+  console.error(err.stack)
   printUsage()
   process.exit(1)
 })
