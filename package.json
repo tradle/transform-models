@@ -1,0 +1,23 @@
+{
+  "name": "@tradle/transform-models",
+  "version": "1.0.0",
+  "description": "transform tradle models on disk",
+  "main": "index.js",
+  "bin": {
+    "transform-models": "./cmd.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "tradle",
+    "transform-models",
+    "models"
+  ],
+  "author": "mvayngrib",
+  "license": "MIT",
+  "dependencies": {
+    "lodash": "^4.17.11",
+    "minimist": "^1.2.0"
+  }
+}
