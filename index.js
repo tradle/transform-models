@@ -14,7 +14,7 @@ const writeJSON = (filePath, value) => write(filePath, JSON.stringify(value, nul
 const transformOne = async ({ filePath, transform }) => {
   const model = await readJSON(filePath)
   const updated = transform(cloneDeep(model))
-  if (!isEqual(updated, model)) {
+  if (updated && !isEqual(updated, model)) {
     await writeJSON(filePath, updated)
     return true
   }
